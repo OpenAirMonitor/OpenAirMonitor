@@ -1,5 +1,7 @@
 # OpenAirMonitor
 
+![OpenAirMonitor](images/OpenAirMonitor.jpg)
+
 **Work in progress**
 
 The OpenAirMonitor is a solar-powered, outdoor air quality monitor that transmits data over LoRaWAN and Bluetooth LE. It measures particulates (PM1, PM2.5 and PM10), humidity and temperature. The monitor has a STEMMA QT connector, so can be extended with other sensors.

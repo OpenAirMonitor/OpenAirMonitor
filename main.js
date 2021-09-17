@@ -26,13 +26,13 @@ const onPms = (d) => {
       console.log('PMS checksum error!');
   }
 
-  /*
+
   sht.read(function(d) {
     console.log('Temperature:', d.temp);
     console.log('Humidity:', d.humidity);
     shtData = d;
   });
-  */
+
 
   batteryVoltage = (analogRead(D31) * 3.3) * (100+30) / 100;
   console.log('Voltage read from pin:', batteryVoltage);
@@ -168,6 +168,8 @@ var sht = require('SHT4x').connect(I2C1);
 digitalWrite(PM_ENABLE, 0);
 loraSetup(true);
 
+Bluetooth.setConsole(true);
+
 const pmInterval = setInterval(() => {
   console.log('Turning on PM..');
   digitalWrite(PM_ENABLE, 1);
@@ -177,8 +179,3 @@ const pmInterval = setInterval(() => {
     lora.emit('data', pmsData, shtData, batteryVoltage);
   }, READ_TIME);
 }, PM_INTERVAL);
-
-
-
-
-

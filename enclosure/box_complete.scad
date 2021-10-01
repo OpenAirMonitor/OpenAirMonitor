@@ -164,8 +164,7 @@ module mountSensor() {
     holeX = 20.32;
     holeY = 12.7;
     
-    rotate([90, 0, 0])
-    translate([20, 10, -box_Size_Y+1]) {
+    translate([20, 80, 0]) {
 
         cylinder(5, d = holeDiameter);
         cylinder(3, d = 4);
@@ -258,7 +257,7 @@ if (box_Size_X>box_Size_Y) {
 }
 
 use <include/zip_tie_cable_holder.scad>;
-translate([90, 160, box_BottomTop_Thickness+barrier_Height]) {
+translate([90, 175, box_BottomTop_Thickness+barrier_Height]) {
     zip_tie_anchor();
     
     translate([-70, 0, 0])

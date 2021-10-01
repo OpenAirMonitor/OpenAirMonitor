@@ -26,7 +26,7 @@ box_Wall_Thickness     =  2.5; // [0.4:0.2:3.2]
 // Box barrier thickness
 barrier_Thickness  =  1; // [0.4:0.2:3.2]
 // Box barrier height
-barrier_Height     =  2;   // [1.0:0.2:8]
+barrier_Height     =  4;   // [1.0:0.2:8]
 // Additional width on the lid to correct for badly calibrated printers
 barrier_Tolerance  =  0.8; // [0.0:0.1:1]
 /* [Mouting Screw Nose Options] */
@@ -68,8 +68,8 @@ module box() {
 			translate([0, box_Screw_Corner_Radius, 0]) cube([box_Size_X, box_Size_Y-2*box_Screw_Corner_Radius, boxHeight]);
 			translate([box_Screw_Corner_Radius, 0, 0]) cube([box_Size_X-2*box_Screw_Corner_Radius, box_Size_Y, boxHeight]);
 			// solid round box, top border
-			translate([barrier_Thickness, box_Screw_Corner_Radius+barrier_Thickness, 0]) cube([box_Size_X-2*barrier_Thickness, box_Size_Y-2*box_Screw_Corner_Radius-2*barrier_Thickness, boxHeight+barrier_Height]);
-			translate([box_Screw_Corner_Radius+barrier_Thickness, barrier_Thickness, 0]) cube([box_Size_X-2*box_Screw_Corner_Radius-2*barrier_Thickness, box_Size_Y-2*barrier_Thickness, boxHeight+barrier_Height]);
+			translate([barrier_Thickness, box_Screw_Corner_Radius+barrier_Thickness, 0]) cube([box_Size_X-2*barrier_Thickness, box_Size_Y-2*box_Screw_Corner_Radius-2*barrier_Thickness, boxHeight+(barrier_Height/2)]);
+			translate([box_Screw_Corner_Radius+barrier_Thickness, barrier_Thickness, 0]) cube([box_Size_X-2*box_Screw_Corner_Radius-2*barrier_Thickness, box_Size_Y-2*barrier_Thickness, boxHeight+(barrier_Height/2)]);
 		}
 		// inner cut-out
 		translate([box_Wall_Thickness, box_Screw_Corner_Radius+box_Wall_Thickness, box_BottomTop_Thickness]) cube([box_Size_X-2*box_Wall_Thickness, box_Size_Y-2*box_Screw_Corner_Radius-2*box_Wall_Thickness, boxHeight+barrier_Height]);
@@ -105,7 +105,7 @@ module box() {
                 }
                 
                 // hole for solar panel
-                translate([70, 10, -(holeLength/2)-sideLength])
+                translate([70, 17, -(holeLength/2)-sideLength])
                     cylinder(holeLength, d = 12);
                 
                 // inset for PMS7003 sensor
@@ -257,7 +257,7 @@ if (box_Size_X>box_Size_Y) {
 	translate([box_Size_X+5, 0, 0]) lid();	
 }
 
-use <zip_tie_cable_holder.scad>;
+use <include/zip_tie_cable_holder.scad>;
 translate([90, 160, box_BottomTop_Thickness+barrier_Height]) {
     zip_tie_anchor();
     
@@ -265,4 +265,13 @@ translate([90, 160, box_BottomTop_Thickness+barrier_Height]) {
         zip_tie_anchor();
 }
 
+use <include/pm-box-home-print.scad>
+ translate([49, -2, 11])
+    rotate([0, 180, -90]) {
+        nipple();
+        
+        translate([0, 27.2, 3.9])
+            scale([1, 1.2, 1.4])
+                nipple();
+    }
 

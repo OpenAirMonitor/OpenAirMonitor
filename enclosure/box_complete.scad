@@ -9,7 +9,7 @@ Modified by [Gerrit Niezen](https://github.com/OpenAirMonitor/OpenAirMonitor/tre
 
 /* [Box Options] */
 // Dimension: Box outer X-Size [mm]
-box_Size_X          = 108;
+box_Size_X          = 111.5;
 // Dimension: Box outer Y-Size [mm]
 box_Size_Y          = 100;
 // Dimension: Box Inner height [mm]
@@ -82,12 +82,6 @@ module box() {
 		// **************************
 		// ** YOUR OWN CUTOUTS HERE!
 		// **************************
-        /*
-		cRadius = 2.8;
-		translate([box_Size_X/2+8,(box_Wall_Thickness+0.1), box_Wall_Thickness+((boxHeight-box_Wall_Thickness)/2)]) rotate([90,00,0]) cylinder(r=cRadius2, h=box_Wall_Thickness+0.2,$fn=50);
-		cRadius2 = 3.0;
-		translate([box_Size_X/2-8,(box_Wall_Thickness+0.1), box_Wall_Thickness+((boxHeight-box_Wall_Thickness)/2)]) rotate([90,00,0]) cylinder(r=cRadius, h=box_Wall_Thickness+0.2,$fn=50);
-        */
         
         // faceplate
         rotate([90, 0, 0]) {
@@ -103,7 +97,7 @@ module box() {
 
                 
                 // PMS7003 holes
-                translate([38, 13, -(holeLength/2)]) {
+                translate([38, 14.5, -(holeLength/2)]) {
                     cube([10, 3, holeLength]);
                     
                     translate([26, -3, 0])
@@ -141,7 +135,7 @@ module box() {
     */
 }
 
-module mount() {
+module mountPCB() {
     translate([0, 1, 0]) {
         translate([12, 9.7, 0]) {
             cylinder(5, d = 1.7);
@@ -161,6 +155,35 @@ module mount() {
         translate([15.2, 68.5, 0]) {
             cylinder(5, d = 1.7);
             cylinder(3, d = 3);
+        }
+    }
+}
+
+module mountSensor() {
+    holeDiameter = 2.4;
+    holeX = 20.32;
+    holeY = 12.7;
+    
+    rotate([90, 0, 0])
+    translate([20, 10, -box_Size_Y+1]) {
+
+        cylinder(5, d = holeDiameter);
+        cylinder(3, d = 4);
+
+
+        translate([holeX, 0, 0]) {
+            cylinder(5, d = holeDiameter);
+            cylinder(3, d = 4);
+        }
+
+        translate([0, holeY, 0]) {
+            cylinder(5, d = holeDiameter);
+            cylinder(3, d = 4);
+        }
+
+        translate([holeX, holeY, 0]) {
+            cylinder(5, d = holeDiameter);
+            cylinder(3, d = 4);
         }
     }
 }
@@ -226,17 +249,20 @@ module screwNose(screwholeDiameter=4, noseHeight=5) {
 	}
 }
 box();
-mount();
+mountPCB();
+mountSensor();
 if (box_Size_X>box_Size_Y) {
 	translate([0, box_Size_Y+5+screwnose_Diameter+screwnose_Wall_Thickness, 0]) lid();	
 } else {
 	translate([box_Size_X+5, 0, 0]) lid();	
 }
 
-translate([4,5,34])
-rotate([0, 90, 0])
-%cylinder(100, d=5);
+use <zip_tie_cable_holder.scad>;
+translate([90, 160, box_BottomTop_Thickness+barrier_Height]) {
+    zip_tie_anchor();
+    
+    translate([-70, 0, 0])
+        zip_tie_anchor();
+}
 
-translate([4,5,34])
-rotate([0, 90, 0])
-%cylinder(100, d=5);
+

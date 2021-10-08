@@ -9,7 +9,7 @@ Modified by [Gerrit Niezen](https://github.com/OpenAirMonitor/OpenAirMonitor/tre
 
 /* [Box Options] */
 // Dimension: Box outer X-Size [mm]
-box_Size_X          = 111.5;
+box_Size_X          = 112.6;
 // Dimension: Box outer Y-Size [mm]
 box_Size_Y          = 100;
 // Dimension: Box Inner height [mm]
@@ -17,18 +17,18 @@ box_Inner_Height    = 34;
 // Box bottom/top thickness
 box_BottomTop_Thickness =  1.2; // [0.6:0.2:3]
 // Edge corner radius 
-box_Screw_Corner_Radius   =  6; // [2:1:10]
+box_Screw_Corner_Radius   =  7; // [2:1:10]
 // four outer screw hole diameters
 box_Screw_Diameter     =  3.2; // [2:0.2:4]
 // Box wall thickness
 box_Wall_Thickness     =  2.5; // [0.4:0.2:3.2]
 /* [Top Barrier Options] */
 // Box barrier thickness
-barrier_Thickness  =  1; // [0.4:0.2:3.2]
+barrier_Thickness  =  0.8; // [0.4:0.2:3.2]
 // Box barrier height
-barrier_Height     =  4;   // [1.0:0.2:8]
+barrier_Height     =  3.8;   // [1.0:0.2:8]
 // Additional width on the lid to correct for badly calibrated printers
-barrier_Tolerance  =  0.8; // [0.0:0.1:1]
+barrier_Tolerance  =  0.2; // [0.0:0.1:1]
 /* [Mouting Screw Nose Options] */
 // Number of screw noses
 screwnose_Number        = 2; // [0:No noses, 2: one top/one bottom, 4: two top/two bottom]
@@ -46,7 +46,7 @@ height = 20;
 holeLength = 12;
 
 %rotate([0, 0, 180])
-translate([-1129, 774, 2])
+translate([-1130, 774, 2])
 resize([88, 0, 0], true)
 import("PCB.stl");
 
@@ -75,10 +75,10 @@ module box() {
 		translate([box_Wall_Thickness, box_Screw_Corner_Radius+box_Wall_Thickness, box_BottomTop_Thickness]) cube([box_Size_X-2*box_Wall_Thickness, box_Size_Y-2*box_Screw_Corner_Radius-2*box_Wall_Thickness, boxHeight+barrier_Height]);
 		translate([box_Screw_Corner_Radius+box_Wall_Thickness, box_Wall_Thickness, box_BottomTop_Thickness]) cube([box_Size_X-2*box_Screw_Corner_Radius-2*box_Wall_Thickness, box_Size_Y-2*box_Wall_Thickness, boxHeight+barrier_Height]);
 		// Screw holes
-		translate([(box_Screw_Corner_Radius+box_Wall_Thickness)/2,(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
-		translate([(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
-		translate([box_Size_X-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
-		translate([box_Size_X-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+		translate([(box_Screw_Corner_Radius+box_Wall_Thickness)/2,(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight+1, $fn=20);
+		translate([(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight+1, $fn=20);
+		translate([box_Size_X-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight+1, $fn=20);
+		translate([box_Size_X-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight+1, $fn=20);
 		// **************************
 		// ** YOUR OWN CUTOUTS HERE!
 		// **************************
@@ -86,7 +86,7 @@ module box() {
         // faceplate
         rotate([90, 0, 0]) {
 
-            translate([6, 0, 0]) {
+            translate([7, 0, 0]) {
                 
                 //antenna hole
                 translate([14.5, 11, -3])
@@ -136,7 +136,7 @@ module box() {
 }
 
 module mountPCB() {
-    translate([0, 1, 0]) {
+    translate([1, 1, 0]) {
         translate([12, 9.7, 0]) {
             cylinder(5, d = 1.7);
             cylinder(3, d = 3);
@@ -187,6 +187,11 @@ module mountSensor() {
     }
 }
 
+module nutHole() {
+    cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+    cylinder(d=6.2, h=2.4, $fn=6);
+}
+
 module lid() {
 	boxHeight = box_BottomTop_Thickness+barrier_Height;
 	difference() {
@@ -224,9 +229,9 @@ module lid() {
 		
 		// Screw holes
 		translate([(box_Screw_Corner_Radius+box_Wall_Thickness)/2,(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
-		translate([(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+		translate([(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) nutHole();
 		translate([box_Size_X-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
-		translate([box_Size_X-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
+		translate([box_Size_X-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,box_Size_Y-(box_Screw_Corner_Radius+box_Wall_Thickness)/2,0]) nutHole();
 	}
 
 	// inner add X direction
@@ -247,25 +252,13 @@ module screwNose(screwholeDiameter=4, noseHeight=5) {
 		cylinder(r=screwholeDiameter/2, h=noseHeight, $fn=60);
 	}
 }
+
 box();
 mountPCB();
 mountSensor();
-if (box_Size_X>box_Size_Y) {
-	translate([0, box_Size_Y+5+screwnose_Diameter+screwnose_Wall_Thickness, 0]) lid();	
-} else {
-	translate([box_Size_X+5, 0, 0]) lid();	
-}
-
-use <include/zip_tie_cable_holder.scad>;
-translate([90, 175, box_BottomTop_Thickness+barrier_Height]) {
-    zip_tie_anchor();
-    
-    translate([-70, 0, 0])
-        zip_tie_anchor();
-}
 
 use <include/pm-box-home-print.scad>
- translate([49, -2, 11])
+ translate([50, -2, 11])
     rotate([0, 180, -90]) {
         nipple();
         
@@ -273,4 +266,25 @@ use <include/pm-box-home-print.scad>
             scale([1, 1.2, 1.4])
                 nipple();
     }
+
+if (box_Size_X>box_Size_Y) {
+	translate([0, box_Size_Y+5+screwnose_Diameter+screwnose_Wall_Thickness, 0]) lid();	
+} else {
+	translate([box_Size_X+5, 0, 0]) lid();	
+}
+
+use <include/zip_tie_cable_holder.scad>;
+translate([93, 175, box_BottomTop_Thickness+barrier_Height]) {
+    zip_tie_anchor();
+    
+    translate([-75, 0, 0])
+        zip_tie_anchor();
+}
+
+
+// distance between screw holes should match solar panel
+translate([6.3,5,34])
+rotate([0, 90, 0])
+%cylinder(100, d=5);
+
 

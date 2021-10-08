@@ -138,8 +138,8 @@ lora.on('ready', () => {
       view.setUint16(2, pmsData.dAtm.pm2_5);
       view.setUint16(4, pmsData.dAtm.pm10);
       view.setUint16(6, batteryVoltage * 1000);
-      // view.setUint16(8, shtData.temp * 1000);
-      // view.setUint16(10, shtData.humidity * 1000);
+      view.setUint16(8, shtData.temp * 1000);
+      view.setUint16(10, shtData.humidity * 1000);
       pmsData = null;
 
       const toSend = arrayBufferToHex(buf);

@@ -173,6 +173,9 @@ Bluetooth.setConsole(true);
 const pmInterval = setInterval(() => {
   console.log('Turning on PM..');
   digitalWrite(PM_ENABLE, 1);
+  Serial1.unsetup();
+  Serial1.removeAllListeners('data');
+  pms = PMS.connect(Serial1, PM_DATA, onPms);
   const readTime = setTimeout(() => {
     console.log('Turning off PM..');
     digitalWrite(PM_ENABLE, 0);

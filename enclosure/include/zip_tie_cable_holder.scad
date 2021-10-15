@@ -12,9 +12,9 @@ module zip_tie_anchor() {
     base_width = 20;
     base_height = 1;
     gap_width = 4;
-    gap_height = 1.5;
+    gap_height =2;
     top_width = 8;
-    top_height = 1.5;
+    top_height = 2.3;
     cross_width = 1.8;
 
     diaginal_width = sqrt(base_width*base_width+base_width*base_width);
@@ -37,17 +37,17 @@ module zip_tie_anchor() {
     translate(v=[0,0,base_height+(gap_height-base_height)/2]) cube(size=[gap_width,top_width+1,gap_height],center=true);
     translate(v=[0,0,base_height+(gap_height-base_height)/2]) cube(size=[top_width+1,gap_width,gap_height],center=true);
 
-    translate(v=[0,0,base_height+(gap_height+base_height)]) cube(size=[top_width,top_width,top_height],center=true);
+    translate(v=[0,0,base_height+(gap_height+base_height)]) cube(size=[top_width,top_width,top_height-gap_height+0.6],center=true);
 
     translate(v=[0,0,-base_height-(base_height)/2]) cube(size=[base_width+2,base_width+2,base_height*2],center=true);
 
-    translate(v=[0,base_width,0]) cube(size=[base_width+5,base_width,base_height+2],center=true);
+    translate(v=[0,base_width,0]) cube(size=[base_width+5,base_width,base_height+gap_height+1],center=true);
 
-    translate(v=[0,-base_width,0]) cube(size=[base_width+5,base_width,base_height+2],center=true);
+    translate(v=[0,-base_width,0]) cube(size=[base_width+5,base_width,base_height+gap_height+1],center=true);
 
-    translate(v=[base_width,0,0]) cube(size=[base_width,base_width+5,base_height+2],center=true);
+    translate(v=[base_width,0,0]) cube(size=[base_width,base_width+5,base_height+gap_height+1],center=true);
 
-    translate(v=[-base_width,0,0]) cube(size=[base_width,base_width+5,base_height+2],center=true);
+    translate(v=[-base_width,0,0]) cube(size=[base_width,base_width+5,base_height+gap_height+1],center=true);
 
     }
 }

@@ -24,11 +24,11 @@ box_Screw_Diameter     =  3.2; // [2:0.2:4]
 box_Wall_Thickness     =  2.5; // [0.4:0.2:3.2]
 /* [Top Barrier Options] */
 // Box barrier thickness
-barrier_Thickness  =  0.8; // [0.4:0.2:3.2]
+barrier_Thickness  =  1; // [0.4:0.2:3.2]
 // Box barrier height
 barrier_Height     =  3.8;   // [1.0:0.2:8]
 // Additional width on the lid to correct for badly calibrated printers
-barrier_Tolerance  =  0.2; // [0.0:0.1:1]
+barrier_Tolerance  =  0.5; // [0.0:0.1:1]
 /* [Mouting Screw Nose Options] */
 // Number of screw noses
 screwnose_Number        = 2; // [0:No noses, 2: one top/one bottom, 4: two top/two bottom]
@@ -189,7 +189,7 @@ module mountSensor() {
 
 module nutHole() {
     cylinder(r=box_Screw_Diameter/2, h=boxHeight, $fn=20);
-    cylinder(d=6.2, h=2.4, $fn=6);
+    cylinder(d=6.2, h=2.6, $fn=6);
 }
 
 module lid() {
@@ -287,4 +287,7 @@ translate([6.3,5,34])
 rotate([0, 90, 0])
 %cylinder(100, d=5);
 
-
+// o-ring
+translate([2,170,5])
+rotate([90, 0, 0])
+%cylinder(40, d=1.8);

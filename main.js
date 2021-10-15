@@ -8,12 +8,14 @@ const lora = {
 let pmsData = null;
 let shtData = null;
 let batteryVoltage = null;
+let joined = false;
 
 const SCL_SDA = { "scl": D10, "sda": D9 };
 const PM_ENABLE = D12;
 const PM_DATA = D5;
 const PM_INTERVAL = 180000;
 const READ_TIME = 30000;
+const RETRY_JOIN_DELAY = 20000;
 
 
 const onPms = (d) => {
@@ -59,10 +61,12 @@ const loraSetup = (init = false) => {
     lora.on('JOIN', (result) => {
       if (result.type === 'Join failed') {
         console.log('Could not join the network');
+        lora.emit('retry');
       }
 
       if (result.type === 'Network joined') {
         console.log('Successfully joined the network');
+        joined = true;
         lora.emit('ready');
       }
     });
@@ -159,8 +163,13 @@ lora.on('done', () => {
   pms = PMS.connect(Serial1, PM_DATA, onPms);
 });
 
-
-
+lora.on('retry', () => {
+  console.log(`Waiting ${RETRY_JOIN_DELAY/1000} seconds before trying to join network again..`);
+  setTimeout(() => {
+    console.log('Attempting to join..');
+    Serial1.println('AT+JOIN');
+  }, RETRY_JOIN_DELAY);
+});
 
 I2C1.setup(SCL_SDA);
 var sht = require('SHT4x').connect(I2C1);
@@ -171,14 +180,16 @@ loraSetup(true);
 Bluetooth.setConsole(true);
 
 const pmInterval = setInterval(() => {
-  console.log('Turning on PM..');
-  digitalWrite(PM_ENABLE, 1);
-  Serial1.unsetup();
-  Serial1.removeAllListeners('data');
-  pms = PMS.connect(Serial1, PM_DATA, onPms);
-  const readTime = setTimeout(() => {
-    console.log('Turning off PM..');
-    digitalWrite(PM_ENABLE, 0);
-    lora.emit('data', pmsData, shtData, batteryVoltage);
-  }, READ_TIME);
+  if (joined) {
+    console.log('Turning on PM..');
+    digitalWrite(PM_ENABLE, 1);
+    Serial1.unsetup();
+    Serial1.removeAllListeners('data');
+    pms = PMS.connect(Serial1, PM_DATA, onPms);
+    const readTime = setTimeout(() => {
+      console.log('Turning off PM..');
+      digitalWrite(PM_ENABLE, 0);
+      lora.emit('data', pmsData, shtData, batteryVoltage);
+    }, READ_TIME);
+  }
 }, PM_INTERVAL);

@@ -12,6 +12,11 @@ CERN Open Hardware Licence Version 2 - Strongly Reciprocal
 
 */
 
+lid = true;
+box = true;
+
+use <include/zip_tie_cable_holder.scad>;
+
 /* [Box Options] */
 // Dimension: Box outer X-Size [mm]
 box_Size_X          = 112.6;
@@ -258,16 +263,12 @@ module screwNose(screwholeDiameter=4, noseHeight=5) {
 	}
 }
 
-box();
-mountPCB();
-mountSensor();
-
-nipple_width=13.0;
-nipple_hole_width=11.0;
-nipple_height=6.0;
-nipple_hole_height=4.0;
-
 module bent_pipe() {
+    nipple_width=13.0;
+    nipple_hole_width=11.0;
+    nipple_height=6.0;
+    nipple_hole_height=4.0;
+    
     rotate([0,90,90]) {
         rotate_extrude(angle=90) {
             translate([5,0,0])
@@ -292,32 +293,41 @@ module bent_pipe() {
     }
 }
 
-difference() {
-    translate([50, -2, 11])
-        rotate([0, 180, -90]) {
-            bent_pipe();
-            
-            translate([0, 27.2, 3.9])
-                scale([1, 1.2, 1.4])
-                    bent_pipe();
-        }
-    translate([10,0,0])
-        rotate([180,0,0])
-            cube([box_Size_X, 20, 10]);
+
+
+if (box) {
+    box();
+    mountPCB();
+    mountSensor();
+
+    difference() {
+        translate([50, -2, 11])
+            rotate([0, 180, -90]) {
+                bent_pipe();
+                
+                translate([0, 27.2, 3.9])
+                    scale([1, 1.2, 1.4])
+                        bent_pipe();
+            }
+        translate([10,0,0])
+            rotate([180,0,0])
+                cube([box_Size_X, 20, 10]);
+    }
 }
 
-if (box_Size_X>box_Size_Y) {
-	translate([0, box_Size_Y+5+screwnose_Diameter+screwnose_Wall_Thickness, 0]) lid();	
-} else {
-	translate([box_Size_X+5, 0, 0]) lid();	
-}
+if (lid) {
+    if (box_Size_X>box_Size_Y) {
+        translate([0, box_Size_Y+5+screwnose_Diameter+screwnose_Wall_Thickness, 0]) lid();	
+    } else {
+        translate([box_Size_X+5, 0, 0]) lid();	
+    }
 
-use <include/zip_tie_cable_holder.scad>;
-translate([93, 175, box_BottomTop_Thickness+barrier_Height]) {
-    zip_tie_anchor();
-    
-    translate([-75, 0, 0])
+    translate([93, 175, box_BottomTop_Thickness+barrier_Height]) {
         zip_tie_anchor();
+        
+        translate([-75, 0, 0])
+            zip_tie_anchor();
+    }
 }
 
 

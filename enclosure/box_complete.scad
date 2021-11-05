@@ -5,6 +5,11 @@ https://www.thingiverse.com/thing:1680291
 
 Modified by [Gerrit Niezen](https://github.com/OpenAirMonitor/OpenAirMonitor/tree/main/enclosure)
 
+Also contains bent pipe segments from:
+https://github.com/fo-am/sonic-kayaks/blob/master/hardware/3dp/pm-box-home-print.scad
+Sonic Kayak sensors, electronics designs and waterproofing systems Copyright (C) 2020 FoAM Kernow
+CERN Open Hardware Licence Version 2 - Strongly Reciprocal
+
 */
 
 /* [Box Options] */
@@ -48,7 +53,7 @@ holeLength = 12;
 %rotate([0, 0, 180])
 translate([-1130, 774, 2])
 resize([88, 0, 0], true)
-import("PCB.stl");
+import("include/PCB.stl");
 
 // **************************
 // ** Calculated globals
@@ -89,11 +94,11 @@ module box() {
             translate([7, 0, 0]) {
                 
                 //antenna hole
-                translate([14.5, 11, -3])
+                translate([14.3, 10.5, -3])
                     cylinder(holeLength, d = 7.5);
                 
-                translate([7.5, 1, -2])
-                    cube([14, 20, 3]);
+                translate([6.5, 1, -2])
+                    cube([16, 20, 3]);
 
                 
                 // PMS7003 holes
@@ -257,15 +262,49 @@ box();
 mountPCB();
 mountSensor();
 
-use <include/pm-box-home-print.scad>
- translate([50, -2, 11])
-    rotate([0, 180, -90]) {
-        nipple();
-        
-        translate([0, 27.2, 3.9])
-            scale([1, 1.2, 1.4])
-                nipple();
+nipple_width=13.0;
+nipple_hole_width=11.0;
+nipple_height=6.0;
+nipple_hole_height=4.0;
+
+module bent_pipe() {
+    rotate([0,90,90]) {
+        rotate_extrude(angle=90) {
+            translate([5,0,0])
+            difference() {
+                square([nipple_height,nipple_width],true);
+                square([nipple_hole_height,nipple_hole_width],true);
+            }            
+        }
+        translate([5,-1.5,0]) {
+            difference() {
+                cube([nipple_height,3,nipple_width],true);
+                cube([nipple_hole_height,3.1,nipple_hole_width],true);
+            }
+            
+            rotate([0,0,90])
+                translate([6.48,11,0])
+                    difference() {
+                        cube([nipple_height,12,nipple_width],true);
+                        cube([nipple_hole_height,12.1,nipple_hole_width],true);
+                    }
+        }
     }
+}
+
+difference() {
+    translate([50, -2, 11])
+        rotate([0, 180, -90]) {
+            bent_pipe();
+            
+            translate([0, 27.2, 3.9])
+                scale([1, 1.2, 1.4])
+                    bent_pipe();
+        }
+    translate([10,0,0])
+        rotate([180,0,0])
+            cube([box_Size_X, 20, 10]);
+}
 
 if (box_Size_X>box_Size_Y) {
 	translate([0, box_Size_Y+5+screwnose_Diameter+screwnose_Wall_Thickness, 0]) lid();	

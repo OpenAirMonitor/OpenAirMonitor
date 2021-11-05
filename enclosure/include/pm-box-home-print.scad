@@ -36,7 +36,7 @@ module sensor() {
 
 nipple_width=13.0;
 nipple_hole_width=11.0;
-nipple_height=6.0;
+nipple_height=18.0;
 nipple_hole_height=4.0;
 
 module bent_pipe() {

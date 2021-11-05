@@ -13,7 +13,7 @@ box_Size_X          = 112.6;
 // Dimension: Box outer Y-Size [mm]
 box_Size_Y          = 100;
 // Dimension: Box Inner height [mm]
-box_Inner_Height    = 34;
+box_Inner_Height    = 33.6;
 // Box bottom/top thickness
 box_BottomTop_Thickness =  1.2; // [0.6:0.2:3]
 // Edge corner radius 
@@ -90,7 +90,7 @@ module box() {
                 
                 //antenna hole
                 translate([14.5, 11, -3])
-                    cylinder(holeLength, d = 8);
+                    cylinder(holeLength, d = 7.5);
                 
                 translate([7.5, 1, -2])
                     cube([14, 20, 3]);

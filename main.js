@@ -10,7 +10,8 @@ let shtData = null;
 let batteryVoltage = null;
 let joined = false;
 
-const SCL_SDA = { "scl": D10, "sda": D9 };
+//const SCL_SDA = { "scl": D10, "sda": D9 };
+const SCL_SDA = { "scl": D14, "sda": D13 };
 const PM_ENABLE = D12;
 const PM_DATA = D5;
 const PM_INTERVAL = 180000;

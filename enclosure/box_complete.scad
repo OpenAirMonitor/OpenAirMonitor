@@ -99,8 +99,8 @@ module box() {
             translate([7, 0, 0]) {
                 
                 //antenna hole
-                translate([14.3, 10.5, -3])
-                    cylinder(holeLength, d = 7.5);
+                translate([14.5, 11, -3])
+                    cylinder(holeLength, d = 7);
                 
                 translate([6.5, 1, -2])
                     cube([16, 20, 3]);
@@ -119,8 +119,8 @@ module box() {
                     cylinder(holeLength, d = 12);
                 
                 // inset for PMS7003 sensor
-                translate([34, 1, -3])
-                    cube([55, 20, 2]);
+                // translate([34, 1, -3])
+                //     cube([55, 20, 2]);
                 
             }
         }

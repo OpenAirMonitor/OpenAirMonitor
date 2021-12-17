@@ -10,8 +10,8 @@ let shtData = null;
 let batteryVoltage = null;
 let joined = false;
 
-//const SCL_SDA = { "scl": D10, "sda": D9 };
-const SCL_SDA = { "scl": D14, "sda": D13 };
+const SCL_SDA = { "scl": D10, "sda": D9 };
+//const SCL_SDA = { "scl": D14, "sda": D13 };
 const PM_ENABLE = D12;
 const PM_DATA = D5;
 const PM_INTERVAL = 180000;
@@ -240,6 +240,15 @@ const encodeAnalogInput = (channel, value) => {
   return concatBuffer(chanb, snsb);
 };
 
+const encodeTemperature = (channel, degc) => {
+  const min = Ranges.TEMPERATURE[0];
+  const max = Ranges.TEMPERATURE[1];
+  rangeCheck(min, max, degc);
+  const chanb = encodeChannelType(channel, Types.TEMPERATURE);
+  const snsb = encodeInt16(degc, Scales.TEMPERATURE);
+    return concatBuffer(chanb, snsb);
+};
+
 lora.on('ready', () => {
   console.log('Finished setup, waiting for data..');
   Serial1.unsetup();
@@ -269,7 +278,8 @@ lora.on('ready', () => {
 
       const pm10 = encodeAnalogInput(1, pmsData.dAtm.pm10);
       const pm2_5 = encodeAnalogInput(2, pmsData.dAtm.pm2_5);
-      const toSend = arrayBufferToHex(pm10) + arrayBufferToHex(pm2_5);
+      const temp = encodeTemperature(3, shtData.temp);
+      const toSend = arrayBufferToHex(pm10) + arrayBufferToHex(pm2_5) + arrayBufferToHex(temp);
 
       Serial1.println(`AT+MSGHEX="${toSend}"`);
       console.log(`Sending ${toSend}`);

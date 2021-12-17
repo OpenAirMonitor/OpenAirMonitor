@@ -21,6 +21,8 @@ The following components can be connected to the PCB:
 
 See this [OSHWLab project](https://oshwlab.com/gendor/air-quality-monitor) for schematic, PCB layout and Bill of Materials.
 
+The LoRa-E5 module can be obtained from [Seeed Studio's webshop](https://www.seeedstudio.com/LoRa-E5-Wireless-Module-p-4745.html), or as part of their [Fusion PCB Assembly Service](https://www.seeedstudio.com/prototype-pcb-assembly.html).
+
 ## Software
 
 Upload `main.js` to the MDBT42Q module over Bluetooth LE using Espruino.

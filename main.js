@@ -260,26 +260,16 @@ lora.on('ready', () => {
     Serial1.unsetup();
     loraSetup();
 
-    const buf = new ArrayBuffer(12);
-    const view = new DataView(buf);
-
     if (pmsData) {
-      /*
-      view.setUint16(0, pmsData.dAtm.pm1);
-      view.setUint16(2, pmsData.dAtm.pm2_5);
-      view.setUint16(4, pmsData.dAtm.pm10);
-      view.setUint16(6, batteryVoltage * 1000);
-      view.setUint16(8, shtData.temp * 1000);
-      view.setUint16(10, shtData.humidity * 1000);
-      pmsData = null;
-
-      const toSend = arrayBufferToHex(buf);
-      */
-
       const pm10 = encodeAnalogInput(1, pmsData.dAtm.pm10);
       const pm2_5 = encodeAnalogInput(2, pmsData.dAtm.pm2_5);
       const temp = encodeTemperature(3, shtData.temp);
-      const toSend = arrayBufferToHex(pm10) + arrayBufferToHex(pm2_5) + arrayBufferToHex(temp);
+      const battery = encodeAnalogInput(4, batteryVoltage);
+      const toSend = arrayBufferToHex(pm10) +
+                     arrayBufferToHex(pm2_5) +
+                     arrayBufferToHex(temp) +
+                     arrayBufferToHex(battery);
+      pmsData = null;
 
       Serial1.println(`AT+MSGHEX="${toSend}"`);
       console.log(`Sending ${toSend}`);

@@ -1,4 +1,4 @@
-const PMS = require('PMS7003');
+const PMS = require('https://raw.githubusercontent.com/gniezen/EspruinoDocs/master/devices/PMS7003.js');
 
 const lora = {
   pins: {tx:D8, rx: D6},
@@ -6,6 +6,7 @@ const lora = {
 };
 
 let pmsData = null;
+var pms = null;
 let shtData = null;
 let batteryVoltage = null;
 let joined = false;
@@ -18,25 +19,19 @@ const PM_INTERVAL = 180000;
 const READ_TIME = 30000;
 const RETRY_JOIN_DELAY = 20000;
 
-
 const onPms = (d) => {
   // TODO: consider averaging the values
-
   if (d.checksumOk) {
         console.log('PM 2.5 data: ', d.dAtm.pm2_5);
         pmsData = d;
   } else {
       console.log('PMS checksum error!');
   }
-
-
   sht.read(function(d) {
     console.log('Temperature:', d.temp);
     console.log('Humidity:', d.humidity);
     shtData = d;
   });
-
-
   batteryVoltage = (analogRead(D31) * 3.3) * (100+30) / 100;
   console.log('Voltage read from pin:', batteryVoltage);
 };
@@ -47,31 +42,25 @@ const arrayBufferToHex = (arrayBuffer) => {
 
 const loraSetup = (init = false) => {
   let buf = '';
-
   Serial1.setup(9600, lora.pins);
   digitalWrite(lora.resetPin,1); // keep LoRa reset pin high
-
-
   if (init) {
     lora.on('MSGHEX', (result) => {
       if (result.type === 'Done') {
         lora.emit('done');
       }
     });
-
     lora.on('JOIN', (result) => {
       if (result.type === 'Join failed') {
         console.log('Could not join the network');
         lora.emit('retry');
       }
-
       if (result.type === 'Network joined') {
         console.log('Successfully joined the network');
         joined = true;
         lora.emit('ready');
       }
     });
-
     lora.on('MODE', (result) => {
       if (result.type === 'LWOTAA') {
         console.log('Set mode to OTAA');
@@ -80,7 +69,6 @@ const loraSetup = (init = false) => {
         console.log('Could not configure channels');
       }
     });
-
     lora.on('CH', (result) => {
       if (result.type === 'NUM' || result.value === '0-2') {
         console.log('Configured channels');
@@ -89,7 +77,6 @@ const loraSetup = (init = false) => {
         console.log('Could not configure channels');
       }
     });
-
     lora.on('DR', (result) => {
       if (result.type === 'EU868') {
         console.log('Data rate set to 868MHz');
@@ -98,10 +85,8 @@ const loraSetup = (init = false) => {
         console.log('Could not set data rate');
       }
     });
-
     Serial1.println('AT+DR=EU868');
   }
-
   // this should be after the other lora event listeners
   Serial1.on('data', (data) => {
     buf += data;
@@ -251,15 +236,10 @@ const encodeTemperature = (channel, degc) => {
 
 lora.on('ready', () => {
   console.log('Finished setup, waiting for data..');
-  Serial1.unsetup();
-  Serial1.removeAllListeners('data');
-  pms = PMS.connect(Serial1, PM_DATA, onPms);
-
   lora.on('data', (pmsData, shtData, batteryVoltage) => {
     console.log('Disconnecting PM..');
     Serial1.unsetup();
     loraSetup();
-
     if (pmsData) {
       const pm10 = encodeAnalogInput(1, pmsData.dAtm.pm10);
       const pm2_5 = encodeAnalogInput(2, pmsData.dAtm.pm2_5);
@@ -270,7 +250,6 @@ lora.on('ready', () => {
                      arrayBufferToHex(temp) +
                      arrayBufferToHex(battery);
       pmsData = null;
-
       Serial1.println(`AT+MSGHEX="${toSend}"`);
       console.log(`Sending ${toSend}`);
     } else {
@@ -280,10 +259,7 @@ lora.on('ready', () => {
 });
 
 lora.on('done', () => {
-  console.log('Sent message, reconnecting PMS..');
-  Serial1.unsetup();
-  Serial1.removeAllListeners('data');
-  pms = PMS.connect(Serial1, PM_DATA, onPms);
+  console.log('Sent message.');
 });
 
 lora.on('retry', () => {
@@ -296,23 +272,24 @@ lora.on('retry', () => {
 
 I2C1.setup(SCL_SDA);
 var sht = require('SHT4x').connect(I2C1);
-
 digitalWrite(PM_ENABLE, 0);
 loraSetup(true);
-
 Bluetooth.setConsole(true);
 
 const pmInterval = setInterval(() => {
   if (joined) {
     console.log('Turning on PM..');
-    digitalWrite(PM_ENABLE, 1);
     Serial1.unsetup();
     Serial1.removeAllListeners('data');
-    pms = PMS.connect(Serial1, PM_DATA, onPms);
+    pms = PMS.connect(Serial1, PM_DATA, PM_ENABLE, onPms);
+    pms.wakeup();
     const readTime = setTimeout(() => {
       console.log('Turning off PM..');
-      digitalWrite(PM_ENABLE, 0);
-      lora.emit('data', pmsData, shtData, batteryVoltage);
+      pms.sleep();
+      setTimeout(() => {
+         // wait for PM sensor to sleep before sending data
+         lora.emit('data', pmsData, shtData, batteryVoltage);
+      }, 1000);
     }, READ_TIME);
   }
 }, PM_INTERVAL);

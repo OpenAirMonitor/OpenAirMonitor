@@ -1,4 +1,4 @@
-const PMS = require('https://raw.githubusercontent.com/gniezen/EspruinoDocs/master/devices/PMS7003.js');
+const PMS = require('PMS7003');
 
 const lora = {
   pins: {tx:D8, rx: D6},
@@ -273,8 +273,11 @@ lora.on('retry', () => {
 I2C1.setup(SCL_SDA);
 var sht = require('SHT4x').connect(I2C1);
 digitalWrite(PM_ENABLE, 0);
-loraSetup(true);
 Bluetooth.setConsole(true);
+
+setTimeout(() => {
+  loraSetup(true);
+}, 1000); // Give LoRa-E5 time to start up
 
 const pmInterval = setInterval(() => {
   if (joined) {

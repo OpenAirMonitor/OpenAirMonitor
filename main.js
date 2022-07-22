@@ -209,6 +209,17 @@ const encodeInt16 = function encodeInt16(value, scale) {
   return buffer;
 };
 
+
+const encodeUInt8 = function encodeUInt8(value, scale) {
+  if (scale == null) {
+    scale = 1;
+  }
+  const buffer = new ArrayBuffer(Sizes.UINT8);
+  const dataView = new DataView(buffer);
+  dataView.setUint8(0, (value * scale) | 0);
+  return buffer;
+};
+
 var concatBuffer = (buffer1, buffer2) => {
   var tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
   tmp.set(new Uint8Array(buffer1), 0);
@@ -239,7 +250,7 @@ const encodeHumidity = (channel, percent) => {
   const max = Ranges.RELATIVE_HUMIDITY[1];
   rangeCheck(min, max, percent);
   const chanb = encodeChannelType(channel, Types.RELATIVE_HUMIDITY);
-  const snsb = encodeInt16(percent, Scales.RELATIVE_HUMIDITY);
+  const snsb = encodeUInt8(percent, Scales.RELATIVE_HUMIDITY);
     return concatBuffer(chanb, snsb);
 };
 
@@ -254,7 +265,7 @@ lora.on('ready', () => {
       const pm2_5 = encodeAnalogInput(2, pmsData.dAtm.pm2_5);
       const temp = encodeTemperature(3, shtData.temp);
       const battery = encodeAnalogInput(4, batteryVoltage);
-      const humidity = encodeHumidity(5, shtData.humidity);
+      const humidity = encodeHumidity(5, Math.round(shtData.humidity));
       const toSend = arrayBufferToHex(pm10) +
                      arrayBufferToHex(pm2_5) +
                      arrayBufferToHex(temp) +

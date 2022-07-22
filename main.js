@@ -70,7 +70,7 @@ const loraSetup = (init = false) => {
       }
     });
     lora.on('CH', (result) => {
-      if (result.type === 'NUM' || result.value === '0-2') {
+      if (result.type === 'NUM' && result.value === '0-2') {
         console.log('Configured channels');
         Serial1.println('AT+MODE=LWOTAA');
       } else {
@@ -234,6 +234,15 @@ const encodeTemperature = (channel, degc) => {
     return concatBuffer(chanb, snsb);
 };
 
+const encodeHumidity = (channel, percent) => {
+  const min = Ranges.RELATIVE_HUMIDITY[0];
+  const max = Ranges.RELATIVE_HUMIDITY[1];
+  rangeCheck(min, max, percent);
+  const chanb = encodeChannelType(channel, Types.RELATIVE_HUMIDITY);
+  const snsb = encodeInt16(percent, Scales.RELATIVE_HUMIDITY);
+    return concatBuffer(chanb, snsb);
+};
+
 lora.on('ready', () => {
   console.log('Finished setup, waiting for data..');
   lora.on('data', (pmsData, shtData, batteryVoltage) => {
@@ -245,10 +254,12 @@ lora.on('ready', () => {
       const pm2_5 = encodeAnalogInput(2, pmsData.dAtm.pm2_5);
       const temp = encodeTemperature(3, shtData.temp);
       const battery = encodeAnalogInput(4, batteryVoltage);
+      const humidity = encodeHumidity(5, shtData.humidity);
       const toSend = arrayBufferToHex(pm10) +
                      arrayBufferToHex(pm2_5) +
                      arrayBufferToHex(temp) +
-                     arrayBufferToHex(battery);
+                     arrayBufferToHex(battery) +
+                     arrayBufferToHex(humidity);
       pmsData = null;
       Serial1.println(`AT+MSGHEX="${toSend}"`);
       console.log(`Sending ${toSend}`);

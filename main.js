@@ -15,7 +15,7 @@ const SCL_SDA = { "scl": D10, "sda": D9 };
 //const SCL_SDA = { "scl": D14, "sda": D13 };
 const PM_ENABLE = D12;
 const PM_DATA = D5;
-const PM_INTERVAL = 180000;
+const PM_INTERVAL = 600000;
 const READ_TIME = 30000;
 const RETRY_JOIN_DELAY = 20000;
 

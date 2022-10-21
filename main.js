@@ -20,6 +20,7 @@ const PM_INTERVAL = 600000;
 const READ_TIME = 30000;
 const RETRY_JOIN_DELAY = 20000;
 const HAS_FUEL_GAUGE = false;  // can use LC709203F fuel gauge
+const USE_SHT31 = false; // can use SHT31 instead of SHT40
 
 const onPms = (d) => {
   // TODO: consider averaging the values
@@ -377,8 +378,37 @@ lora.on('retry', () => {
   }, RETRY_JOIN_DELAY);
 });
 
+function SHT31(_i2c) {
+  this.i2c = _i2c;
+}
+
+// read with callback({humidity,temp})
+SHT31.prototype.read = function(callback) {
+  // high repeatability with clock stretching disabled
+  this.i2c.writeTo(0x44, [0x24, 0x00]);
+  var sht = this;
+  setTimeout(function() {
+    var d = new DataView(sht.i2c.readFrom(0x44, 6).buffer);
+    callback({
+      temp : d.getUint16(0)*175/65536 - 45,
+      humidity : d.getUint16(3)*125/65536 - 6
+    });
+  }, 20);
+};
+
+var connect3 = function (_i2c) {
+  return new SHT31(_i2c);
+};
+
 I2C1.setup(SCL_SDA);
-var sht = require('SHT4x').connect(I2C1);
+
+var sht = null;
+if (USE_SHT31) {
+  sht = connect3(I2C1);
+} else {
+  sht = require('SHT4x').connect(I2C1);
+}
+
 var fuelGauge = null;
 if (HAS_FUEL_GAUGE) {
   fuelGauge = connect2(I2C1);

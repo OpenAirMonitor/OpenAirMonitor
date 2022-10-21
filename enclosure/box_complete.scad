@@ -80,6 +80,10 @@ module box() {
 			// solid round box, top border
 			translate([barrier_Thickness, box_Screw_Corner_Radius+barrier_Thickness, 0]) cube([box_Size_X-2*barrier_Thickness, box_Size_Y-2*box_Screw_Corner_Radius-2*barrier_Thickness, boxHeight+(barrier_Height/2)]);
 			translate([box_Screw_Corner_Radius+barrier_Thickness, barrier_Thickness, 0]) cube([box_Size_X-2*box_Screw_Corner_Radius-2*barrier_Thickness, box_Size_Y-2*barrier_Thickness, boxHeight+(barrier_Height/2)]);
+      
+      // antenna cover
+      translate([21.5, -53, 0]) cylinder(r=8, h=21, $fn=20);   
+      rotate([90, 0, 0]) translate([13.5, 0, 0]) cube([16, 21, 53]);
 		}
 		// inner cut-out
 		translate([box_Wall_Thickness, box_Screw_Corner_Radius+box_Wall_Thickness, box_BottomTop_Thickness]) cube([box_Size_X-2*box_Wall_Thickness, box_Size_Y-2*box_Screw_Corner_Radius-2*box_Wall_Thickness, boxHeight+barrier_Height]);
@@ -99,11 +103,8 @@ module box() {
             translate([7, 0, 0]) {
                 
                 //antenna hole
-                translate([14.5, 11, -3])
-                    cylinder(holeLength, d = 7);
-                
-                translate([6.5, 1, -2])
-                    cube([16, 20, 3]);
+                translate([8.5, 1.2, -4])
+                   cube([12, 18, 59]);
 
                 
                 // PMS7003 holes
@@ -340,3 +341,7 @@ rotate([0, 90, 0])
 translate([2,170,5])
 rotate([90, 0, 0])
 %cylinder(40, d=1.8);
+
+rotate([90, 0, 0])
+translate([14.5, 11, 0])
+%cylinder(54, d=10);

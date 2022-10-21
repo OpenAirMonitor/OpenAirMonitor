@@ -9,15 +9,17 @@ let pmsData = null;
 var pms = null;
 let shtData = null;
 let batteryVoltage = null;
+let batteryPercentage = null;
 let joined = false;
 
-const SCL_SDA = { "scl": D10, "sda": D9 };
-//const SCL_SDA = { "scl": D14, "sda": D13 };
-const PM_ENABLE = D12;
+const SCL_SDA = { "scl": D14, "sda": D13 };
+const ENABLE_PM = D12;
 const PM_DATA = D5;
+const ENABLE_5V = D19;
 const PM_INTERVAL = 600000;
 const READ_TIME = 30000;
 const RETRY_JOIN_DELAY = 20000;
+const HAS_FUEL_GAUGE = false;  // can use LC709203F fuel gauge
 
 const onPms = (d) => {
   // TODO: consider averaging the values
@@ -32,8 +34,24 @@ const onPms = (d) => {
     console.log('Humidity:', d.humidity);
     shtData = d;
   });
-  batteryVoltage = (analogRead(D31) * 3.3) * (100+30) / 100;
-  console.log('Voltage read from pin:', batteryVoltage);
+
+  if (HAS_FUEL_GAUGE) {
+    fuelGauge.readRSOC((d) => {
+      console.log(`Battery percent: ${d}%`);
+      batteryPercentage = d;
+    });
+
+    fuelGauge.readVoltage((d) => {
+      console.log(`Battery voltage: ${d}V`);
+      batteryVoltage = d;
+    });
+
+    pinVoltage = (analogRead(D31) * 3.3) * (100+30) / 100;
+    console.log('Voltage read from pin:', pinVoltage);
+  } else {
+    batteryVoltage = (analogRead(D31) * 3.3) * (100+30) / 100;
+    console.log('Voltage read from pin:', batteryVoltage);
+  }
 };
 
 const arrayBufferToHex = (arrayBuffer) => {
@@ -209,7 +227,6 @@ const encodeInt16 = function encodeInt16(value, scale) {
   return buffer;
 };
 
-
 const encodeUInt8 = function encodeUInt8(value, scale) {
   if (scale == null) {
     scale = 1;
@@ -242,7 +259,7 @@ const encodeTemperature = (channel, degc) => {
   rangeCheck(min, max, degc);
   const chanb = encodeChannelType(channel, Types.TEMPERATURE);
   const snsb = encodeInt16(degc, Scales.TEMPERATURE);
-    return concatBuffer(chanb, snsb);
+  return concatBuffer(chanb, snsb);
 };
 
 const encodeHumidity = (channel, percent) => {
@@ -251,8 +268,76 @@ const encodeHumidity = (channel, percent) => {
   rangeCheck(min, max, percent);
   const chanb = encodeChannelType(channel, Types.RELATIVE_HUMIDITY);
   const snsb = encodeUInt8(percent, Scales.RELATIVE_HUMIDITY);
-    return concatBuffer(chanb, snsb);
+  return concatBuffer(chanb, snsb);
 };
+
+function LC709203F(_i2c) {
+  this.i2c = _i2c;
+
+  // initialize
+  const powerOn = [0x15, 0x01, 0x00];
+  this.sendData(powerOn);
+
+  const packSize = [0x0B, 0x36, 0x00];
+  this.sendData(packSize);
+
+  const batteryProfile = [0x12, 0x01, 0x00];
+  this.sendData(batteryProfile);
+
+  const temperatureMode = [0x16, 0x01, 0x00];
+  this.sendData(temperatureMode);
+
+  this.readICVersion((d) => {
+    console.log(`IC Version: ${d.toString(16)}`);
+  });
+}
+
+LC709203F.prototype.crcChecksum = function(address, data) {
+  var crc = 0x00;
+  const bytes = [address].concat(data);
+
+  for(let byte of bytes) {
+    crc ^= byte;
+
+    for (let i = 8; i; --i) {
+      crc = (crc & 0x80) ? ((crc << 1) ^ 0x07) & 0xFF : (crc << 1) & 0xFF;
+    }
+  }
+
+  return crc;
+};
+
+
+LC709203F.prototype.sendData = function(data, callback) {
+  const bytes = data.slice();
+  bytes.push(this.crcChecksum(0x0B, bytes));
+  this.i2c.writeTo(0x0B, bytes);
+};
+
+
+LC709203F.prototype.readICVersion= function(callback) {
+  this.i2c.writeTo({address: 0x0B, stop: false}, [0x11]);
+  var d = new DataView(this.i2c.readFrom(0x0B, 3).buffer);
+  return callback(d.getUint16(0));
+};
+
+LC709203F.prototype.readRSOC = function(callback) {
+  this.i2c.writeTo({address: 0x0B, stop: false}, [0x0D]);
+  var d = this.i2c.readFrom(0x0B, 3);
+  return callback(d[0]);
+};
+
+LC709203F.prototype.readVoltage = function(callback) {
+  this.i2c.writeTo({address: 0x0B, stop: false}, [0x09]);
+  var d = new DataView(this.i2c.readFrom(0x0B, 3).buffer);
+  return callback(d.getUint16(0, true)/1000);
+};
+
+var connect2 = function (_i2c) {
+  return new LC709203F(_i2c);
+};
+
+
 
 lora.on('ready', () => {
   console.log('Finished setup, waiting for data..');
@@ -294,7 +379,13 @@ lora.on('retry', () => {
 
 I2C1.setup(SCL_SDA);
 var sht = require('SHT4x').connect(I2C1);
-digitalWrite(PM_ENABLE, 0);
+var fuelGauge = null;
+if (HAS_FUEL_GAUGE) {
+  fuelGauge = connect2(I2C1);
+}
+
+digitalWrite(ENABLE_PM, 0);
+digitalWrite(ENABLE_5V, 1);
 Bluetooth.setConsole(true);
 
 setTimeout(() => {
@@ -306,7 +397,7 @@ const pmInterval = setInterval(() => {
     console.log('Turning on PM..');
     Serial1.unsetup();
     Serial1.removeAllListeners('data');
-    pms = PMS.connect(Serial1, PM_DATA, PM_ENABLE, onPms);
+    pms = PMS.connect(Serial1, PM_DATA, ENABLE_PM, onPms);
     pms.wakeup();
     const readTime = setTimeout(() => {
       console.log('Turning off PM..');

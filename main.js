@@ -10,6 +10,7 @@ var pms = null;
 let shtData = null;
 let batteryVoltage = null;
 let batteryPercentage = null;
+let batteryChargeRate = null;
 let joined = false;
 
 const SCL_SDA = { "scl": D14, "sda": D13 };
@@ -19,7 +20,7 @@ const ENABLE_5V = D19;
 const PM_INTERVAL = 600000;
 const READ_TIME = 30000;
 const RETRY_JOIN_DELAY = 20000;
-const HAS_FUEL_GAUGE = false;  // can use LC709203F fuel gauge
+const HAS_FUEL_GAUGE = false;  // can use MAX1704X fuel gauge
 const USE_SHT31 = false; // can use SHT31 instead of SHT40
 
 const onPms = (d) => {
@@ -37,15 +38,14 @@ const onPms = (d) => {
   });
 
   if (HAS_FUEL_GAUGE) {
-    fuelGauge.readRSOC((d) => {
-      console.log(`Battery percent: ${d}%`);
-      batteryPercentage = d;
-    });
+    batteryPercentage = fuelGauge.readPercent();
+    console.log(`Battery percent: ${batteryPercentage} %`);
 
-    fuelGauge.readVoltage((d) => {
-      console.log(`Battery voltage: ${d}V`);
-      batteryVoltage = d;
-    });
+    batteryVoltage = fuelGauge.readVoltage();
+    console.log(`Battery voltage: ${batteryVoltage} V`);
+
+    batteryChargeRate = fuelGauge.readChargeRate();
+    console.log(`Battery charge rate: ${batteryChargeRate} %/hr`);
 
     pinVoltage = (analogRead(D31) * 3.3) * (100+30) / 100;
     console.log('Voltage read from pin:', pinVoltage);
@@ -272,73 +272,49 @@ const encodeHumidity = (channel, percent) => {
   return concatBuffer(chanb, snsb);
 };
 
-function LC709203F(_i2c) {
+function MAX1704X(_i2c) {
   this.i2c = _i2c;
-
-  // initialize
-  const powerOn = [0x15, 0x01, 0x00];
-  this.sendData(powerOn);
-
-  const packSize = [0x0B, 0x36, 0x00];
-  this.sendData(packSize);
-
-  const batteryProfile = [0x12, 0x01, 0x00];
-  this.sendData(batteryProfile);
-
-  const temperatureMode = [0x16, 0x01, 0x00];
-  this.sendData(temperatureMode);
-
-  this.readICVersion((d) => {
-    console.log(`IC Version: ${d.toString(16)}`);
-  });
+  this.reset();
 }
 
-LC709203F.prototype.crcChecksum = function(address, data) {
-  var crc = 0x00;
-  const bytes = [address].concat(data);
-
-  for(let byte of bytes) {
-    crc ^= byte;
-
-    for (let i = 8; i; --i) {
-      crc = (crc & 0x80) ? ((crc << 1) ^ 0x07) & 0xFF : (crc << 1) & 0xFF;
+MAX1704X.prototype.reset = function() {
+  try {
+    this.i2c.writeTo(0x36, [0xFE, 0x54, 0x00]);
+  } catch (err) {
+    if (err.message.includes('33282')) {
+      // we got a NACK, which is what we want
+      return;
+    } else {
+      throw new Error('Something went wrong during reset()');
     }
   }
+};
 
-  return crc;
+MAX1704X.prototype.readRegister = function(register) {
+  this.i2c.writeTo({address: 0x36, stop: false}, [register]);
+  return new DataView(this.i2c.readFrom(0x36, 3).buffer);
 };
 
 
-LC709203F.prototype.sendData = function(data, callback) {
-  const bytes = data.slice();
-  bytes.push(this.crcChecksum(0x0B, bytes));
-  this.i2c.writeTo(0x0B, bytes);
+MAX1704X.prototype.readICVersion = function() {
+  return this.readRegister(0x08).getUint16().toString(16);
 };
 
-
-LC709203F.prototype.readICVersion= function(callback) {
-  this.i2c.writeTo({address: 0x0B, stop: false}, [0x11]);
-  var d = new DataView(this.i2c.readFrom(0x0B, 3).buffer);
-  return callback(d.getUint16(0));
+MAX1704X.prototype.readPercent = function() {
+  return this.readRegister(0x04).getUint16() / 256.0;
 };
 
-LC709203F.prototype.readRSOC = function(callback) {
-  this.i2c.writeTo({address: 0x0B, stop: false}, [0x0D]);
-  var d = this.i2c.readFrom(0x0B, 3);
-  return callback(d[0]);
+MAX1704X.prototype.readVoltage = function(callback) {
+  return this.readRegister(0x02).getUint16() * 78.125 / 1000000;
 };
 
-LC709203F.prototype.readVoltage = function(callback) {
-  this.i2c.writeTo({address: 0x0B, stop: false}, [0x09]);
-  var d = new DataView(this.i2c.readFrom(0x0B, 3).buffer);
-  return callback(d.getUint16(0, true)/1000);
+MAX1704X.prototype.readChargeRate = function(callback) {
+  return this.readRegister(0x16).getInt16() * 0.208;
 };
 
 var connect2 = function (_i2c) {
-  return new LC709203F(_i2c);
+  return new MAX1704X(_i2c);
 };
-
-
 
 lora.on('ready', () => {
   console.log('Finished setup, waiting for data..');
@@ -352,11 +328,13 @@ lora.on('ready', () => {
       const temp = encodeTemperature(3, shtData.temp);
       const battery = encodeAnalogInput(4, batteryVoltage);
       const humidity = encodeHumidity(5, Math.round(shtData.humidity));
+      const chargeRate = encodeAnalogInput(6, batteryChargeRate);
       const toSend = arrayBufferToHex(pm10) +
                      arrayBufferToHex(pm2_5) +
                      arrayBufferToHex(temp) +
                      arrayBufferToHex(battery) +
-                     arrayBufferToHex(humidity);
+                     arrayBufferToHex(humidity) +
+                     arrayBufferToHex(chargeRate);
       pmsData = null;
       Serial1.println(`AT+MSGHEX="${toSend}"`);
       console.log(`Sending ${toSend}`);
@@ -439,3 +417,4 @@ const pmInterval = setInterval(() => {
     }, READ_TIME);
   }
 }, PM_INTERVAL);
+

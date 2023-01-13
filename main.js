@@ -17,7 +17,7 @@ const SCL_SDA = { "scl": D14, "sda": D13 };
 const ENABLE_PM = D12;
 const PM_DATA = D5;
 const ENABLE_5V = D19;
-const PM_INTERVAL = 600000;
+const PM_INTERVAL = 3600000; // 60 minutes
 const READ_TIME = 30000;
 const RETRY_JOIN_DELAY = 20000;
 const HAS_FUEL_GAUGE = false;  // can use MAX1704X fuel gauge
@@ -317,7 +317,8 @@ var connect2 = function (_i2c) {
 };
 
 lora.on('ready', () => {
-  console.log('Finished setup, waiting for data..');
+  console.log('Finished setup, putting LoRa modem to sleep');
+  Serial1.println('AT+LOWPOWER');
   lora.on('data', (pmsData, shtData, batteryVoltage) => {
     console.log('Disconnecting PM..');
     Serial1.unsetup();
@@ -336,8 +337,11 @@ lora.on('ready', () => {
                      arrayBufferToHex(humidity) +
                      arrayBufferToHex(chargeRate);
       pmsData = null;
-      Serial1.println(`AT+MSGHEX="${toSend}"`);
-      console.log(`Sending ${toSend}`);
+      Serial1.println('A'); // wakeup LoRa modem
+      setTimeout(() => {
+        Serial1.println(`AT+MSGHEX="${toSend}"`);
+        console.log(`Sending ${toSend}`);
+      }, 5);
     } else {
       console.log('No PM data available.');
     }
@@ -345,7 +349,8 @@ lora.on('ready', () => {
 });
 
 lora.on('done', () => {
-  console.log('Sent message.');
+  console.log('Sent message, putting LoRa modem to sleep');
+  Serial1.println('AT+LOWPOWER');
 });
 
 lora.on('retry', () => {
@@ -393,7 +398,7 @@ if (HAS_FUEL_GAUGE) {
 }
 
 digitalWrite(ENABLE_PM, 0);
-digitalWrite(ENABLE_5V, 1);
+digitalWrite(ENABLE_5V, 0);
 Bluetooth.setConsole(true);
 
 setTimeout(() => {
@@ -405,11 +410,13 @@ const pmInterval = setInterval(() => {
     console.log('Turning on PM..');
     Serial1.unsetup();
     Serial1.removeAllListeners('data');
+    digitalWrite(ENABLE_5V, 1);
     pms = PMS.connect(Serial1, PM_DATA, ENABLE_PM, onPms);
     pms.wakeup();
     const readTime = setTimeout(() => {
       console.log('Turning off PM..');
       pms.sleep();
+      digitalWrite(ENABLE_5V, 0);
       setTimeout(() => {
          // wait for PM sensor to sleep before sending data
          lora.emit('data', pmsData, shtData, batteryVoltage);
@@ -417,4 +424,3 @@ const pmInterval = setInterval(() => {
     }, READ_TIME);
   }
 }, PM_INTERVAL);
-

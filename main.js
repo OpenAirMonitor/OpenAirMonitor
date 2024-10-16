@@ -1,7 +1,10 @@
 const PMS = require('PMS7003');
 
 const lora = {
-  pins: {tx:D8, rx: D6},
+  pins: {
+    tx: D8,
+    rx: D6
+  },
   resetPin: D3,
 };
 
@@ -13,23 +16,26 @@ let batteryPercentage = null;
 let batteryChargeRate = null;
 let joined = false;
 
-const SCL_SDA = { "scl": D14, "sda": D13 };
+const SCL_SDA = {
+  "scl": D14,
+  "sda": D13
+};
 const ENABLE_PM = D12;
 const PM_DATA = D5;
 const ENABLE_5V = D19;
 const PM_INTERVAL = 3600000; // 60 minutes
 const READ_TIME = 30000;
 const RETRY_JOIN_DELAY = 20000;
-const HAS_FUEL_GAUGE = false;  // can use MAX1704X fuel gauge
+const HAS_FUEL_GAUGE = false; // can use MAX1704X fuel gauge
 const USE_SHT31 = false; // can use SHT31 instead of SHT40
 
 const onPms = (d) => {
   // TODO: consider averaging the values
   if (d.checksumOk) {
-        console.log('PM 2.5 data: ', d.dAtm.pm2_5);
-        pmsData = d;
+    console.log('PM 2.5 data: ', d.dAtm.pm2_5);
+    pmsData = d;
   } else {
-      console.log('PMS checksum error!');
+    console.log('PMS checksum error!');
   }
   sht.read(function(d) {
     console.log('Temperature:', d.temp);
@@ -47,22 +53,22 @@ const onPms = (d) => {
     batteryChargeRate = fuelGauge.readChargeRate();
     console.log(`Battery charge rate: ${batteryChargeRate} %/hr`);
 
-    pinVoltage = (analogRead(D31) * 3.3) * (100+30) / 100;
+    pinVoltage = (analogRead(D31) * 3.3) * (100 + 30) / 100;
     console.log('Voltage read from pin:', pinVoltage);
   } else {
-    batteryVoltage = (analogRead(D31) * 3.3) * (100+30) / 100;
+    batteryVoltage = (analogRead(D31) * 3.3) * (100 + 30) / 100;
     console.log('Voltage read from pin:', batteryVoltage);
   }
 };
 
 const arrayBufferToHex = (arrayBuffer) => {
-  return (new Uint8Array(arrayBuffer)).slice().map(x=>(256+x).toString(16).substr(-2)).join("");
+  return (new Uint8Array(arrayBuffer)).slice().map(x => (256 + x).toString(16).substr(-2)).join("");
 };
 
 const loraSetup = (init = false) => {
   let buf = '';
   Serial1.setup(9600, lora.pins);
-  digitalWrite(lora.resetPin,1); // keep LoRa reset pin high
+  digitalWrite(lora.resetPin, 1); // keep LoRa reset pin high
   if (init) {
     lora.on('MSGHEX', (result) => {
       if (result.type === 'Done') {
@@ -110,7 +116,7 @@ const loraSetup = (init = false) => {
   Serial1.on('data', (data) => {
     buf += data;
     var idx = buf.indexOf("\r");
-    while ( idx >= 0) {
+    while (idx >= 0) {
       const line = buf.substr(0, idx);
       buf = buf.substr(idx + 1);
       // print(line);
@@ -291,7 +297,10 @@ MAX1704X.prototype.reset = function() {
 };
 
 MAX1704X.prototype.readRegister = function(register) {
-  this.i2c.writeTo({address: 0x36, stop: false}, [register]);
+  this.i2c.writeTo({
+    address: 0x36,
+    stop: false
+  }, [register]);
   return new DataView(this.i2c.readFrom(0x36, 3).buffer);
 };
 
@@ -312,7 +321,7 @@ MAX1704X.prototype.readChargeRate = function(callback) {
   return this.readRegister(0x16).getInt16() * 0.208;
 };
 
-var connect2 = function (_i2c) {
+var connect2 = function(_i2c) {
   return new MAX1704X(_i2c);
 };
 
@@ -327,15 +336,17 @@ lora.on('ready', () => {
       const pm10 = encodeAnalogInput(1, pmsData.dAtm.pm10);
       const pm2_5 = encodeAnalogInput(2, pmsData.dAtm.pm2_5);
       const temp = encodeTemperature(3, shtData.temp);
-      const battery = encodeAnalogInput(4, batteryVoltage);
-      const humidity = encodeHumidity(5, Math.round(shtData.humidity));
+      const humidity = encodeHumidity(4, Math.round(shtData.humidity));
+      const battery = encodeAnalogInput(5, batteryVoltage);
       const chargeRate = encodeAnalogInput(6, batteryChargeRate);
+      // works with https://revspace.nl/Sensor-data-bridge
       const toSend = arrayBufferToHex(pm10) +
-                     arrayBufferToHex(pm2_5) +
-                     arrayBufferToHex(temp) +
-                     arrayBufferToHex(battery) +
-                     arrayBufferToHex(humidity) +
-                     arrayBufferToHex(chargeRate);
+        arrayBufferToHex(pm2_5) +
+        arrayBufferToHex(temp) +
+        arrayBufferToHex(humidity);
+      // The following can't be uploaded to sensor.community
+      // arrayBufferToHex(battery) +
+      // arrayBufferToHex(chargeRate);
       pmsData = null;
       Serial1.println('A'); // wakeup LoRa modem
       setTimeout(() => {
@@ -373,13 +384,13 @@ SHT31.prototype.read = function(callback) {
   setTimeout(function() {
     var d = new DataView(sht.i2c.readFrom(0x44, 6).buffer);
     callback({
-      temp : d.getUint16(0)*175/65536 - 45,
-      humidity : d.getUint16(3)*125/65536 - 6
+      temp: d.getUint16(0) * 175 / 65536 - 45,
+      humidity: d.getUint16(3) * 125 / 65536 - 6
     });
   }, 20);
 };
 
-var connect3 = function (_i2c) {
+var connect3 = function(_i2c) {
   return new SHT31(_i2c);
 };
 
@@ -418,8 +429,8 @@ const pmInterval = setInterval(() => {
       pms.sleep();
       digitalWrite(ENABLE_5V, 0);
       setTimeout(() => {
-         // wait for PM sensor to sleep before sending data
-         lora.emit('data', pmsData, shtData, batteryVoltage);
+        // wait for PM sensor to sleep before sending data
+        lora.emit('data', pmsData, shtData, batteryVoltage);
       }, 1000);
     }, READ_TIME);
   }
